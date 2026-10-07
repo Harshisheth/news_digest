@@ -1,0 +1,264 @@
+{
+  "name": "AI News Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "562e276d-c2f0-475a-827b-690306df4df0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=geopolitics+war&hl=en-IN&gl=IN&ceid=IN:en",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c8975797-86f7-46c9-93a9-e665a05cd2e5",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=India+cricket&hl=en-IN&gl=IN&ceid=IN:en",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        192
+      ],
+      "id": "87acaeec-27c3-41a7-af6b-392cffe2ee64",
+      "name": "RSS Read1"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=AI+tools+artificial+intelligence&hl=en-IN&gl=IN&ceid=IN:en",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        -208
+      ],
+      "id": "d7b511cd-9624-45c2-8c78-3334214f2594",
+      "name": "RSS Read2"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        480,
+        -16
+      ],
+      "id": "d220cd46-cd5e-4169-ac32-ddfb6774785d",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen = new Set();\nconst articles = [];\n\nfor (const item of $input.all()) {\n  const title = item.json.title || '';\n  const link  = item.json.link  || '';\n  const snip  = item.json.contentSnippet || item.json.summary || '';\n  const date  = item.json.pubDate || '';\n\n  if (!seen.has(title) && title) {\n    seen.add(title);\n    articles.push(`Title: ${title}\\nURL: ${link}\\nSnippet: ${snip}\\nDate: ${date}`);\n  }\n\n  if (articles.length >= 12) break;\n}\n\nconst allArticles = articles.join('\\n\\n---\\n\\n');\nreturn [{ json: { allArticles, count: articles.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        0
+      ],
+      "id": "7009315c-68d3-4dec-a81e-edd711458164",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.allArticles }}",
+        "options": {
+          "systemMessage": "You are an AI News Digest Assistant.\n\nYou receive multiple news articles containing:\n- Title\n- URL\n- Snippet\n- Publication Date\n\nYour job is to create a concise professional daily news digest.\n\nFor EVERY article:\n\n1. Keep the original title.\n2. Mention the source if available.\n3. Mention the publication date.\n4. Summarize the article in 2-3 concise bullet points.\n5. Use ONLY information present in the provided input.\n6. Do not invent facts.\n7. Preserve the original URL.\n\nAvoid:\n- Long paragraphs\n- Repeating the same information\n- Unnecessary introductions\n- Speculation\n- Fake URLs\n\nAfter summarizing all articles, create a section:\n\n\"🔥 Key Themes Today\"\n\nIdentify 3-5 major themes appearing across the articles.\n\nThe final email should follow this structure:\n\nSubject:\nDaily AI & Technology Digest\n\nBody:\n\n📰 DAILY AI & TECHNOLOGY DIGEST\n\n1. [TITLE]\nSource: [SOURCE]\nDate: [DATE]\n\n• [Key point]\n• [Key point]\n• [Optional key point]\n\n🔗 Read more: [URL]\n\n---\n\n2. [TITLE]\nSource: [SOURCE]\nDate: [DATE]\n\n• [Key point]\n• [Key point]\n\n🔗 Read more: [URL]\n\n---\n\n🔥 KEY THEMES TODAY\n\n• [Theme 1]\n• [Theme 2]\n• [Theme 3]\n\nThe digest must be concise and easy to scan.\n\nSend exactly ONE email using the Gmail tool after preparing the complete digest."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        864,
+        0
+      ],
+      "id": "67de652e-3f2a-47bb-bc78-109b882e1aee",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sendTo": "harshisheth2004@gmail.com",
+        "subject": "NEWS Alert",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1152,
+        192
+      ],
+      "id": "2a3b27d2-afba-4550-8b2c-79a7998c654c",
+      "name": "Send a message in Gmail",
+      "webhookId": "f712d27c-41bf-4931-9a0c-cc7ada7323e3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2A9LxBFUjv876YwE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        768,
+        192
+      ],
+      "id": "4e8e7b9d-0d64-4b19-8f3a-4e0b48d62822",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "hNakuwtvbIoXSzSv",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Read1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Read2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RSS Read2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "20f313e7-ee6d-4986-9385-6f7d487a5253",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b5be0efae45764691aa8125f0a1089b3266afe378d772d1c5a4199f417fb419d"
+  },
+  "id": "bBpzsfFz37hZHL52",
+  "tags": []
+}
